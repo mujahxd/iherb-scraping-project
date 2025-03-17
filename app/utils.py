@@ -1,8 +1,10 @@
 import csv
 from typing import List
-from app import Product
+from app import Product, ProductModel 
 import time
 from app.scraper import ProductScraper
+from sqlalchemy.exc import IntegrityError
+from app.database import SessionLocal
 
 def get_all_products():
     """Scrape all products from the category page."""
@@ -51,3 +53,35 @@ def save_to_csv(products: List[Product], filename="data/products.csv"):
                 product.list_price, product.brand_name, product.brand_url, 
                 product.brand_logo_url, product.primary_image_index
             ])
+
+
+def save_to_db(product_data):
+    """Menyimpan data produk ke database."""
+    session = SessionLocal()
+    try:
+        product = ProductModel(
+            product_id=product_data.product_id,
+            display_name=product_data.display_name,
+            is_available=product_data.is_available,
+            part_number=product_data.part_number,
+            root_category_name=product_data.root_category_name,
+            product_url=product_data.product_url,
+            discount_price=product_data.discount_price,
+            list_price=product_data.list_price,
+            brand_name=product_data.brand_name,
+            brand_url=product_data.brand_url,
+            brand_logo_url=product_data.brand_logo_url,
+            primary_image_index=product_data.primary_image_index
+        )
+
+        session.add(product)
+        session.commit()
+        print(f"[✅] Product {product_data.display_name} saved to database.")
+    except IntegrityError:
+        session.rollback()
+        print(f"[⚠] Product {product_data.product_id} already exists in the database. Skipping.")
+    except Exception as e:
+        session.rollback()
+        print(f"[❌] Error saving product {product_data.display_name}: {e}")
+    finally:
+        session.close()
