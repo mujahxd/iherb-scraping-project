@@ -1,4 +1,3 @@
-
 import curl_cffi.requests as requests
 from bs4 import BeautifulSoup
 import time
